@@ -21,8 +21,19 @@ export const buildFilterClause = (filters) => {
     paramIndex++;
   }
 
-  // Age Range filter
-  if(filters.minAge !== undefined || filters.maxAge !== undefined){
+  // Age Range filter (supports both old minAge/maxAge and new ageRanges)
+  if(filters.ageRanges && filters.ageRanges.length > 0) {
+    // Handle multiple age range selections like ['18-25', '26-35']
+    const ageRangeConditions = filters.ageRanges.map(range => {
+      if(range === '66+') {
+        return `age >= 66`;
+      }
+      const [min, max] = range.split('-').map(Number);
+      return `(age >= ${min} AND age <= ${max})`;
+    });
+    conditions.push(`(${ageRangeConditions.join(' OR ')})`);
+  } else if(filters.minAge !== undefined || filters.maxAge !== undefined) {
+    // Fallback to old min/max age filter
     const minAge = filters.minAge !== undefined ? parseInt(filters.minAge) : 0;
     const maxAge = filters.maxAge !== undefined ? parseInt(filters.maxAge) : 150;
     conditions.push(`age >= $${paramIndex} AND age <= $${paramIndex + 1}`);
@@ -39,12 +50,12 @@ export const buildFilterClause = (filters) => {
 
   // Tags filter
   if(filters.tags && filters.tags.length > 0){
-    const tagConditions = filters.tags.map((tag, idx) => {
+    const tagConditions = filters.tags.map(tag => {
+      const currentParam = paramIndex++;
       params.push(`%${tag}%`);
-      return `tags ILIKE $${paramIndex + idx}`;
+      return `tags ILIKE $${currentParam}`;
     });
     conditions.push(`(${tagConditions.join(' OR ')})`);
-    paramIndex += filters.tags.length;
   }
 
   // Payment Method filter
