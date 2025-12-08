@@ -8,3 +8,6 @@ build/
 .idea/
 coverage/
 .cache/
+
+# Large data files - not tracked in git
+*.csv
