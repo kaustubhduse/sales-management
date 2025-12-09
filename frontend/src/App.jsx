@@ -28,9 +28,13 @@ function App() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar />
+      {/* Sidebar - hidden on mobile, visible on medium screens and up */}
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
       
-      <div className="ml-60 flex-1 min-h-screen max-w-[calc(100vw-15rem)] overflow-x-hidden">
+      {/* Main content - no margin on mobile, left margin on desktop */}
+      <div className="md:ml-60 flex-1 min-h-screen max-w-full md:max-w-[calc(100vw-15rem)] overflow-x-hidden">
         <div className="bg-gray-50 border-b border-gray-200 px-8 py-2 flex justify-between items-center">
           <h1 className="text-xl font-semibold text-gray-900 m-0">Sales Management System</h1>
           <SearchBar 
