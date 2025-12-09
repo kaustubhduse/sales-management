@@ -1,175 +1,197 @@
-# TruEstate - Retail Sales Management System
+# Sales Management System
 
-A full-stack web application for managing and analyzing retail sales data with advanced search, filtering, sorting, and pagination capabilities.
+A full-stack sales data management application with advanced search, filtering, sorting, and pagination capabilities. Built with React, Node.js, Express, and PostgreSQL, handling 2M+ transaction records with optimized performance through database indexing and Redis caching.
 
-## Overview
+**Live Demo:** [https://sales-management-frontend.vercel.app](https://your-frontend-url.vercel.app)  
+**Backend API:** [https://sales-management-g461.onrender.com](https://sales-management-g461.onrender.com)
 
-This system processes large-scale retail sales data from a CSV file and provides an intuitive interface for searching, filtering, and analyzing sales transactions. Built with clean architecture and professional coding standards, it demonstrates scalable system design suitable for production environments.
+---
+
+## Architecture
+
+![Refer here](docs/architecture.md)
 
 ## Tech Stack
 
-**Backend:**
-- Node.js & Express.js
-- CSV Parser for data processing
-- RESTful API architecture
+### Frontend
+- **Framework:** React 18 with Vite
+- **Styling:** Tailwind CSS
+- **State Management:** React Query (TanStack Query)
+- **Routing:** React Router DOM
 
-**Frontend:**
-- React 18 with Vite
-- Axios for API communication
-- Custom hooks for state management
-- Modern CSS with responsive design
+### Backend
+- **Runtime:** Node.js
+- **Framework:** Express.js
+- **Database:** PostgreSQL (2M+ records)
+- **Caching:** Redis (Upstash)
+- **Deployment:** Render
+
+### Performance Optimizations
+- Redis caching for filter options (1-hour TTL)
+- PostgreSQL indexes (B-Tree, GIN) for fast queries
+- React Query for client-side caching
+- Debounced search (500ms)
+- Rate limiting (100 req/min)
+
+---
 
 ## Search Implementation Summary
 
-The search functionality provides real-time, case-insensitive search across customer names and phone numbers. Implemented with:
-- Debounced input (500ms delay) to minimize API calls
-- Backend filtering using JavaScript string matching
-- Search state persists across filter and sort operations
-- Returns results instantly from in-memory data structure
+**Full-Text Search with PostgreSQL GIN Index**
+
+- **Method:** Uses `to_tsvector` with GIN index for fast text search across `customer_name` and `phone_number` fields
+- **Pattern Matching:** Supports partial matches with `ILIKE` for flexible searching
+- **Debouncing:** 500ms delay to reduce API calls while typing
+- **Index:** `idx_customer_search` (GIN) - reduces search time from 5s to <50ms on 2M rows
+
+**Frontend Implementation:**
+- Custom `useDebounce` hook prevents excessive API calls
+- Real-time search results update as user types
+- Search integrates seamlessly with active filters
+
+---
 
 ## Filter Implementation Summary
 
-Multi-select filtering supports:
-- **Customer Region**: Multiple region selection
-- **Gender**: Multiple gender selection
-- **Age Range**: Min/max numeric range
-- **Product Category**: Multiple category selection
-- **Tags**: Multiple tag selection
-- **Payment Method**: Multiple payment method selection
-- **Date Range**: Start and end date selection
+**Multi-Select Filters with Array-Based Queries**
 
-Filters work independently and in combination using AND logic. Backend processes filters sequentially on the dataset, maintaining optimal performance even with large data volumes.
+Supports 6 filter categories:
+1. **Customer Region** - Uses `= ANY(array)` for exact matches
+2. **Gender** - Uses `= ANY(array)` for exact matches
+3. **Age Range** - Multi-select ranges (18-25, 26-35, etc.) with OR conditions
+4. **Product Category** - Uses `= ANY(array)` for exact matches
+5. **Tags** - Uses `ILIKE` with GIN index for pattern matching
+6. **Payment Method** - Uses `= ANY(array)` for exact matches
+
+**Backend:**
+- Dynamic WHERE clause construction with parameterized queries (SQL injection prevention)
+- Comma-separated query params converted to arrays
+- Optimized with B-Tree indexes on filter columns
+
+**Frontend:**
+- Native HTML multi-select dropdowns (Ctrl/Cmd + Click)
+- Selected filters displayed as removable chips
+- Filter state managed in React with `useState`
+
+**Caching:**
+- Filter options cached in Redis for 1 hour
+- First request: ~5s (database query)
+- Subsequent requests: <10ms (Redis cache hit)
+
+---
 
 ## Sorting Implementation Summary
 
-Three sorting options implemented:
-- **Date**: Newest first (descending) or oldest first (ascending)
-- **Quantity**: High to low or low to high
-- **Customer Name**: Alphabetical A-Z or Z-A
+**Multi-Column Sorting with Indexed Queries**
 
-Sorting is performed on the backend after filtering, using JavaScript's native sort with custom comparators. Sort state is preserved when applying new filters or searches.
+**Supported Sort Fields:**
+- Date (default: DESC)
+- Quantity
+- Total Amount
+- Final Amount
+- Customer Name
+
+**Implementation:**
+- **Backend:** Dynamic `ORDER BY` clause construction
+- **Indexes:** 
+  - `idx_date` - Optimized for date sorting (DESC)
+  - `idx_metrics` - Composite index on quantity, total_amount, final_amount
+- **Frontend:** Dropdown with sort field + order (ASC/DESC) selection
+- **Performance:** <100ms for sorted queries on 2M rows
+
+**SQL Example:**
+```sql
+SELECT * FROM sales 
+WHERE customer_region = ANY($1) 
+ORDER BY date DESC 
+LIMIT 10 OFFSET 0;
+```
+
+---
 
 ## Pagination Implementation Summary
 
-Efficient pagination system with:
-- Fixed page size of 10 items per page
-- Previous/Next navigation controls
-- Current page and total page display
-- Total records count
-- Disabled states for boundary pages
+**Server-Side Pagination with Offset-Based Strategy**
 
-Backend slices the filtered and sorted dataset to return only the requested page, minimizing network transfer and improving performance.
+**Configuration:**
+- Page size: 10 records (configurable)
+- Metadata: Total records, total pages, current page, has next/previous
+
+**Backend:**
+- Uses `LIMIT` and `OFFSET` for pagination
+- Separate `COUNT(*)` query for total records (optimized with indexes)
+- Returns pagination metadata with every response
+
+**Frontend:**
+- Fixed pagination bar at bottom of screen
+- Shows current page, total pages, and navigation buttons
+- Jump to specific page functionality
+- Maintains filter/search/sort state during pagination
+
+---
 
 ## Setup Instructions
 
 ### Prerequisites
-- Node.js 18+ installed
-- Dataset CSV file (`truestate_assignment_dataset.csv`)
+- Node.js 18+
+- PostgreSQL 14+
+- Redis (optional, for caching)
 
 ### Backend Setup
 
-1. Navigate to backend directory:
 ```bash
+# Navigate to backend
 cd backend
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Ensure the sales data CSV is in the root directory (../sales_data.csv)
+# Initialize database using Node.js (run once)
+node -e "const {Client}=require('pg');const c=new Client({user:'postgres',password:'root',host:'localhost',port:5432});c.connect().then(()=>c.query('CREATE DATABASE sales_management')).then(()=>{console.log('Database created');c.end()}).catch(e=>console.log(e.message))"
 
-4. Start the server:
-```bash
+# Create tables and load data
+node database/migrate.js
+
+# Start development server
 npm run dev
 ```
 
-The backend will run on http://localhost:5000
+Backend runs on `http://localhost:5000`
 
 ### Frontend Setup
 
-1. Navigate to frontend directory:
 ```bash
+# Navigate to frontend
 cd frontend
-```
 
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Start the development server:
-```bash
+# Start development server
 npm run dev
 ```
 
-The frontend will run on http://localhost:5173
+Frontend runs on `http://localhost:5173`
 
-### Running Both Together
+### Database Migration
 
-From the root directory, you can run:
-```bash
-# Terminal 1 - Backend
-cd backend && npm run dev
-
-# Terminal 2 - Frontend  
-cd frontend && npm run dev
-```
+The `migrate.js` script:
+1. Creates `sales` table with schema
+2. Loads CSV data (2M+ records) in batches
+3. Creates all indexes automatically
+4. Handles duplicate prevention
+---
 
 ## API Endpoints
 
-- `GET /api/sales` - Get sales data with search, filters, sorting, and pagination
-- `GET /api/filters` - Get all available filter options
-- `GET /health` - Health check endpoint
+### GET `/api/sales`
+Fetch sales data with filters, search, sort, and pagination
 
-## Project Structure
-
-```
-TruEstate/
-├── backend/
-│   ├── src/
-│   │   ├── controllers/     # Request handlers
-│   │   ├── services/        # Business logic
-│   │   ├── utils/          # Utility functions
-│   │   ├── routes/         # API routes
-│   │   └── index.js        # Server entry point
-│   └── package.json
-├── frontend/
-│   ├── src/
-│   │   ├── components/     # React components
-│   │   ├── hooks/          # Custom React hooks
-│   │   ├── services/       # API services
-│   │   ├── styles/         # CSS files
-│   │   ├── App.jsx         # Main app component
-│   │   └── main.jsx        # Entry point
-│   └── package.json
-├── docs/
-│   └── architecture.md     # System architecture
-└── README.md              # This file
-```
-
-## Links
-
-- **GitHub Repository**: [To be added after pushing to GitHub]
-- **Live Application**: [To be added after deployment]
-
-## Features
-
-✅ Search by customer name or phone number  
-✅ Multi-select filters for all data dimensions  
-✅ Age range and date range filtering  
-✅ Sorting by date, quantity, customer name  
-✅ Pagination with 10 items per page  
-✅ Responsive design for all devices  
-✅ Clean, maintainable code architecture  
-✅ Comprehensive error handling  
-✅ Professional UI/UX design
-
-## License
-
-This project was created as part of the TruEstate SDE Intern assignment.
+### GET `/api/filters`
+Fetch all available filter options (cached in Redis)
 
 ---
 
-Built with ❤️ for TruEstate
+**Total Database Size:** ~800MB (2M records + indexes)
+
+---

@@ -53,6 +53,10 @@ CREATE INDEX idx_date ON sales (date DESC);
 
 CREATE INDEX idx_filter_combo ON sales (customer_region, gender, product_category, date DESC);
 
+-- GIN index for tags to speed up ILIKE searches
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+CREATE INDEX idx_tags ON sales USING GIN (tags gin_trgm_ops);
+
 CREATE INDEX idx_metrics ON sales (quantity, total_amount, final_amount);
 
 COMMENT ON TABLE sales IS 'Sales transaction data from CSV file';

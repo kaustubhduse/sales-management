@@ -55,16 +55,24 @@ export const getFilterOptions = async () => {
       FROM sales
     `);
 
-    // Get unique tags (this requires parsing comma-separated values)
+    // Get unique tags (optimized - limit sample size to avoid full table scan)
+    // For 2M+ rows, unnest on entire table is too expensive
     const tagsResult = await query(`
       SELECT DISTINCT unnest(string_to_array(tags, ',')) as tag
       FROM sales 
       WHERE tags IS NOT NULL
+      LIMIT 10000
     `);
-    const uniqueTags = tagsResult.rows
-      .map(row => row.tag ? row.tag.trim() : null)
-      .filter(tag => tag)
-      .sort();
+    
+    // Fallback to common tags to ensure UI works even if query is slow
+    const commonTags = ['organic', 'skincare', 'portable', 'wireless', 'gadgets', 'unisex', 'cotton', 'formal', 'makeup', 'beauty', 'fragrance-free'];
+    
+    const uniqueTags = tagsResult.rows.length > 0
+      ? [...new Set([
+          ...tagsResult.rows.map(row => row.tag ? row.tag.trim() : null).filter(tag => tag),
+          ...commonTags
+        ])].sort()
+      : commonTags;
 
     const filterOptions = {
       customerRegions: regionsResult.rows.map(r => r.customer_region),

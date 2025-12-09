@@ -2,7 +2,7 @@ import {getSalesData, getFilterOptionsFromData} from '../services/dataService.js
 
 export const getSales = async (req, res) => {
   try {
-    const {search, customerRegion, gender, minAge, maxAge, productCategory, tags, paymentMethod, 
+    const {search, customerRegion, gender, minAge, maxAge, ageRanges, productCategory, tags, paymentMethod, 
     startDate, endDate, sortBy = 'date', order = 'desc', page = 1, pageSize = 10} = req.query;
 
     const filters = {};
@@ -15,7 +15,10 @@ export const getSales = async (req, res) => {
       filters.gender = Array.isArray(gender) ? gender : gender.split(',');
     }
     
-    if(minAge || maxAge){
+    // Support both ageRanges (new multi-select) and minAge/maxAge (old)
+    if(ageRanges){
+      filters.ageRanges = Array.isArray(ageRanges) ? ageRanges : ageRanges.split(',');
+    } else if(minAge || maxAge){
       if(minAge) filters.minAge = minAge;
       if(maxAge) filters.maxAge = maxAge;
     }
@@ -44,6 +47,7 @@ export const getSales = async (req, res) => {
   }
   catch(error){
     console.error('Error in getSales:', error);
+    console.error('Error stack:', error.stack);
     res.status(500).json({
       success: false,
       message: 'Error fetching sales data',
