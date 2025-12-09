@@ -35,7 +35,7 @@ const FilterBar = ({ filters, updateFilter, filterOptions }) => {
         <div className="absolute inset-0 flex items-center px-3 pointer-events-none">
           <span className="text-gray-500 text-sm">{label}</span>
         </div>
-        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+        <div className="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none flex items-center justify-center w-6 h-6">
           <svg className="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
           </svg>
