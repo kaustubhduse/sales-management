@@ -27,7 +27,7 @@ export const buildSearchClause = (searchQuery) => {
   const searchTerm = searchQuery.trim();
   
   return{
-    clause: `(to_tsvector('english', COALESCE(customer_name, '') || ' ' || COALESCE(phone_number, '')) @@ plainto_tsquery('english', $1))`,
-    params: [searchTerm]
+    clause: `(customer_name ILIKE $1 OR phone_number ILIKE $1)`,
+    params: [`${searchTerm}%`]  
   };
 };
