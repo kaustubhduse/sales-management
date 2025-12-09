@@ -1,6 +1,6 @@
 import { query } from '../config/db.js';
 import { buildSearchClause } from './searchService.js';
-import { buildFilterClause } from './filterService.js';
+import { buildFilterClause, buildFilterClauseWithIndex } from './filterService.js';
 import { buildSortClause } from './sortService.js';
 import { buildPaginationClause, getPaginationMetadata, getTotalCount } from './paginationService.js';
 import { getFilterOptions } from './filterOptionsService.js';
@@ -12,6 +12,8 @@ export const getSalesData = async (searchQuery, filters, sortBy, order, page, pa
     const whereClauses = [];
     let params = [];
     let paramIndex = 1;
+    
+    // Add search clause
     if(searchQuery){
       const search = buildSearchClause(searchQuery);
       if(search.clause){
@@ -20,16 +22,11 @@ export const getSalesData = async (searchQuery, filters, sortBy, order, page, pa
         paramIndex += search.params.length;
       }
     }
-    const filterResult = buildFilterClause(filters);
+    
+    // Add filter clauses - pass paramIndex so filters build with correct indices
+    const filterResult = buildFilterClauseWithIndex(filters, paramIndex);
     if(filterResult.clause){
-      let adjustedClause = filterResult.clause;
-      filterResult.params.forEach((param, idx) => {
-        const oldParam = `$${idx + 1}`;
-        const newParam = `$${paramIndex + idx}`;
-        adjustedClause = adjustedClause.replace(new RegExp('\\' + oldParam + '(?!\\d)', 'g'), newParam);
-      });
-      
-      whereClauses.push(adjustedClause);
+      whereClauses.push(filterResult.clause);
       params.push(...filterResult.params);
       paramIndex += filterResult.params.length;
     }

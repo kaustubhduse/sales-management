@@ -1,7 +1,7 @@
-export const buildFilterClause = (filters) => {
+export const buildFilterClauseWithIndex = (filters, startIndex = 1) => {
   const conditions = [];  
   const params = [];
-  let paramIndex = 1;
+  let paramIndex = startIndex;
 
   if(filters.customerRegion && filters.customerRegion.length > 0){
     conditions.push(`customer_region = ANY($${paramIndex})`);
@@ -68,9 +68,11 @@ export const buildFilterClause = (filters) => {
     paramIndex += 2;
   }
 
-  return{
-    clause: conditions.length > 0 ? conditions.join(' AND ') : '',
-    params,
-    paramIndex
-  };
+  const clause = conditions.length > 0 ? conditions.join(' AND ') : '';
+  return {clause, params};
+};
+
+// Legacy function - kept for backward compatibility
+export const buildFilterClause = (filters) => {
+  return buildFilterClauseWithIndex(filters, 1);
 };
