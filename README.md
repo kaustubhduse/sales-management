@@ -9,7 +9,7 @@ A full-stack sales data management application with advanced search, filtering, 
 
 ## Architecture
 
-![Refer here](docs/architecture.md)
+For detailed system architecture, backend/frontend design, data flow diagrams, and folder structure, refer to [Architecture Documentation](docs/architecture.md).
 
 ## Tech Stack
 
