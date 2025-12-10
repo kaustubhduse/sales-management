@@ -2,7 +2,7 @@
 
 A full-stack sales data management application with advanced search, filtering, sorting, and pagination capabilities. Built with React, Node.js, Express, and PostgreSQL, handling 2M+ transaction records with optimized performance through database indexing and Redis caching.
 
-**Live Demo:** [https://sales-management-pied.vercel.app/](https://sales-management-pied.vercel.app)  
+**Live Demo:** [https://sales-management-pied.vercel.app/](https://sales-management-pied.vercel.app/)  
 **Backend API:** [https://sales-management-g461.onrender.com/](https://sales-management-g461.onrender.com)
 
 ---
