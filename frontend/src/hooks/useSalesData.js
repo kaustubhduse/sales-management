@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react';
 import { fetchSalesData, fetchFilterOptions } from '../services/api';
+import { DEFAULT_FILTER_OPTIONS } from '../constants/filterDefaults';
 
 export const useSalesData = () => {
   const [salesData, setSalesData] = useState([]);
-  const [filterOptions, setFilterOptions] = useState(null);
+  // Initialize with default options for instant rendering
+  const [filterOptions, setFilterOptions] = useState(DEFAULT_FILTER_OPTIONS);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
@@ -35,6 +37,7 @@ export const useSalesData = () => {
   useEffect(() => {
     const loadFilterOptions = async () => {
       try {
+        // Load real options in background without blocking UI
         const response = await fetchFilterOptions();
         console.log('Filter options response:', response);
         setFilterOptions(response.filters || response);
